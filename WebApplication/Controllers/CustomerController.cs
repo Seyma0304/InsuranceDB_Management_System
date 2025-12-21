@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using WebApplication.Models;
 using WebApplication.Models.Data;
 
@@ -11,19 +7,28 @@ namespace WebApplication.Controllers
 {
     public class CustomerController : Controller
     {
+        private readonly Db _db;
+
+        public CustomerController(IConfiguration configuration)
+        {
+            _db = new Db(configuration);
+        }
+
         // GET: Customer
-        public ActionResult Index()
+        public IActionResult Index()
         {
             return View();
         }
-        public ActionResult Create()
+
+        public IActionResult Create()
         {
             return View();
         }
+
         [HttpPost]
-        public ActionResult Create(CustomerCreateModel model)
+        public IActionResult Create(CustomerCreateModel model)
         {
-            using (SqlConnection con = new Db().GetConnection())
+            using (SqlConnection con = _db.GetConnection())
             {
                 SqlCommand cmd = new SqlCommand("sp_CreateCustomer", con);
                 cmd.CommandType = System.Data.CommandType.StoredProcedure;
@@ -57,7 +62,5 @@ namespace WebApplication.Controllers
 
             return RedirectToAction("Index");
         }
-
     }
-
 }

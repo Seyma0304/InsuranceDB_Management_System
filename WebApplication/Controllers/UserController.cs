@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Web.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using WebApplication.Models;
 using WebApplication.Models.Data;
 
@@ -8,13 +7,18 @@ namespace WebApplication.Controllers
 {
     public class UserController : Controller
     {
-        Db db = new Db();
+        private readonly Db _db;
 
-        public ActionResult Index()
+        public UserController(IConfiguration configuration)
+        {
+            _db = new Db(configuration);
+        }
+
+        public IActionResult Index()
         {
             List<UserModel> users = new List<UserModel>();
 
-            using (SqlConnection con = db.GetConnection())
+            using (SqlConnection con = _db.GetConnection())
             {
                 SqlCommand cmd = new SqlCommand("SELECT * FROM User_", con);
                 con.Open();
@@ -25,10 +29,10 @@ namespace WebApplication.Controllers
                     users.Add(new UserModel
                     {
                         UserId = (int)dr["UserId"],
-                        Email = dr["Email"].ToString(),
-                        UserPassword = dr["UserPassword"].ToString(),
-                        UserType = dr["UserType"].ToString(),
-                        CreatedDate = (System.DateTime)dr["CreatedDate"]
+                        Email = dr["Email"].ToString() ?? string.Empty,
+                        UserPassword = dr["UserPassword"].ToString() ?? string.Empty,
+                        UserType = dr["UserType"].ToString() ?? string.Empty,
+                        CreatedDate = (DateTime)dr["CreatedDate"]
                     });
                 }
             }

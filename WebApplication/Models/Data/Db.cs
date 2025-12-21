@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using System.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
 namespace WebApplication.Models.Data
 {
@@ -7,10 +6,10 @@ namespace WebApplication.Models.Data
     {
         private readonly string _connectionString;
 
-        public Db()
+        public Db(IConfiguration configuration)
         {
-            _connectionString = ConfigurationManager
-                .ConnectionStrings["DefaultConnection"].ConnectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection") 
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         }
 
         public SqlConnection GetConnection()
