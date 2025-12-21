@@ -1,0 +1,52 @@
+﻿@model WebApplication.Models.CustomerCreateModel
+
+<h2>Create Customer</h2>
+
+<form method="post">
+
+    <h4>User Information</h4>
+
+    <label>Email</label>
+    <input class="form-control" name="Email" required />
+
+    <label>Password</label>
+    <input class="form-control" name="UserPassword" type="password" required />
+
+    <h4>Customer Info</h4>
+
+    <label>Phone</label>
+    <input class="form-control" name="Phone" required />
+
+    <label>Address</label>
+    <input class="form-control" name="AddressLine" required />
+
+    <label>Customer Type</label>
+    <select class="form-control" name="CustomerType" required>
+        <option value="Person">Person</option>
+        <option value="Company">Company</option>
+    </select>
+
+    <div id="personFields">
+        <h4>Person Details</h4>
+        <label>First Name</label>
+        <input class="form-control" name="FirstName" />
+
+        <label>Last Name</label>
+        <input class="form-control" name="LastName" />
+
+        <label>National ID</label>
+        <input class="form-control" name="NationalIdNo" />
+    </div>
+
+    <div id="companyFields">
+        <h4>Company Details</h4>
+        <label>Company Name</label>
+        <input class="form-control" name="CompanyName" />
+
+        <label>Tax Number</label>
+        <input class="form-control" name="CompanyTaxNo" />
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Create</button>
+
+</form>
