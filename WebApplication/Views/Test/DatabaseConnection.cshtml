@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Database Connection Test";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            @if (ViewBag.Status == "success")
+            {
+                <div class="alert alert-success">
+                    <h3>@ViewBag.Message</h3>
+                    <hr />
+                    <p><strong>Server Version:</strong> @ViewBag.ServerVersion</p>
+                    <p><strong>Database:</strong> @ViewBag.Database</p>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <h3>@ViewBag.Message</h3>
+                    <hr />
+                    <p><strong>Error:</strong></p>
+                    <pre>@ViewBag.Error</pre>
+                </div>
+            }
+            
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Ana Sayfaya Dön</a>
+        </div>
+    </div>
+</div>

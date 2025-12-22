@@ -1,0 +1,581 @@
+@model WebApplication.Controllers.ContractOperationsViewModel
+@{
+    ViewData["Title"] = "Sözleşme İşlemleri";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">
+        <i class="bi bi-file-earmark-text"></i> Sözleşme İşlemleri
+    </h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Search Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-search"></i> Sözleşme Ara</h5>
+        </div>
+        <div class="card-body">
+            <!-- Selected Tariff Display -->
+            <div id="selectedTariffInfo" class="alert alert-info d-none mb-3">
+                <strong><i class="bi bi-check-circle"></i> Seçili Tarife:</strong>
+                <span id="selectedTariffDisplay"></span>
+                <button type="button" class="btn btn-sm btn-outline-info ms-2" id="clearTariffBtn">
+                    <i class="bi bi-x-circle"></i> Seçimi Temizle
+                </button>
+            </div>
+
+            <!-- Selected Contract No Display -->
+            <div id="selectedContractInfo" class="alert alert-success d-none mb-3">
+                <strong><i class="bi bi-check-circle"></i> Seçili Sözleşme No:</strong>
+                <span id="selectedContractDisplay"></span>
+                <button type="button" class="btn btn-sm btn-outline-success ms-2" id="clearContractBtn">
+                    <i class="bi bi-x-circle"></i> Seçimi Temizle
+                </button>
+            </div>
+            
+            <form method="post" asp-action="SearchContracts" id="searchForm">
+                <!-- Hidden field to store selected tariff -->
+                <input type="hidden" id="selectedTariffHidden" name="selectedTariff" value="" />
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="tariffSelect" class="form-label">Tarife Seç</label>
+                        <div class="input-group">
+                            <select class="form-select" id="tariffSelect" name="tariffName">
+                                <option value="">-- Tarife Seçin --</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" type="button" id="loadTariffsBtn">
+                                <i class="bi bi-arrow-clockwise"></i> Yükle
+                            </button>
+                        </div>
+                        <small class="text-muted">Tarifeleri yüklemek için butona tıklayın</small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="contractNoSelect" class="form-label">Sözleşme No Seç</label>
+                        <div class="input-group">
+                            <select class="form-select" id="contractNoSelect" name="contractNo">
+                                <option value="">-- Sözleşme No Seçin --</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" type="button" id="loadContractNumbersBtn">
+                                <i class="bi bi-arrow-clockwise"></i> Yükle
+                            </button>
+                        </div>
+                        <small class="text-muted">Sözleşme numaralarını yüklemek için butona tıklayın</small>
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-search"></i> Ara
+                        </button>
+                        <a href="@Url.Action("Operations")" class="btn btn-secondary">
+                            <i class="bi bi-arrow-counterclockwise"></i> Temizle
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Yeni İşlem</h5>
+        </div>
+        <div class="card-body">
+            <a href="@Url.Action("Create")" class="btn btn-success">
+                <i class="bi bi-file-earmark-plus"></i> Yeni Sözleşme Oluştur
+            </a>
+            
+            <button type="button" class="btn btn-info ms-2" id="showTariffContractsBtn">
+                <i class="bi bi-list-task"></i> Seçili Tarife İle İlgili Sözleşmeleri Göster
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    @if (Model.PolicyList != null && Model.PolicyList.Any())
+    {
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> Poliçe Listesi 
+                    <span class="badge bg-light text-dark">@Model.PolicyList.Count adet</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong><i class="bi bi-info-circle"></i> Arama Kriterleri:</strong>
+                    @if (!string.IsNullOrEmpty(Model.SelectedTariffName))
+                    {
+                        <span class="badge bg-primary ms-2">Tarife: @Model.SelectedTariffName</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.SearchContractNo))
+                    {
+                        <span class="badge bg-success ms-2">Sözleşme No: @Model.SearchContractNo</span>
+                    }
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="bi bi-file-text"></i> Poliçe No</th>
+                                <th><i class="bi bi-tag"></i> Tarife Adı</th>
+                                <th><i class="bi bi-code-square"></i> Tarife Kodu</th>
+                                <th><i class="bi bi-file-earmark-text"></i> Sözleşme Adı</th>
+                                <th><i class="bi bi-123"></i> Sözleşme No</th>
+                                <th><i class="bi bi-calendar-check"></i> Başlangıç</th>
+                                <th><i class="bi bi-calendar-x"></i> Bitiş</th>
+                                <th><i class="bi bi-currency-dollar"></i> Prim Tutarı</th>
+                                <th><i class="bi bi-trash"></i> İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var policy in Model.PolicyList)
+                            {
+                                <tr id="policy-row-@policy.PolicyId">
+                                    <td><strong>@policy.PolicyNo</strong></td>
+                                    <td>@policy.TariffName</td>
+                                    <td><code>@policy.TariffCode</code></td>
+                                    <td>@policy.ContractName</td>
+                                    <td><span class="badge bg-info">@policy.ContractNo</span></td>
+                                    <td>@policy.StartDate.ToString("dd.MM.yyyy")</td>
+                                    <td>@policy.EndDate.ToString("dd.MM.yyyy")</td>
+                                    <td><span class="badge bg-success">@policy.PremiumAmount.ToString("C2")</span></td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm delete-policy-btn" 
+                                                data-policy-id="@policy.PolicyId" 
+                                                data-policy-no="@policy.PolicyNo"
+                                                title="Poliçeyi Sil">
+                                            <i class="bi bi-trash"></i> Sil
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.PolicyList != null && !Model.PolicyList.Any() && (!string.IsNullOrEmpty(Model.SelectedTariffName) || !string.IsNullOrEmpty(Model.SearchContractNo)))
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-info-circle"></i> Arama kriterlerine uygun poliçe bulunamadı.
+            <br><small>Lütfen hem Tarife hem de Sözleşme No seçtiğinizden emin olun.</small>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let tariffsLoaded = false;
+            let contractNumbersLoaded = false;
+            let selectedTariffName = '@Model.SelectedTariffName' || '';
+            let selectedContractNo = '@Model.SearchContractNo' || '';
+
+            // Initialize selected tariff if exists
+            if (selectedTariffName) {
+                updateSelectedTariffDisplay(selectedTariffName);
+            }
+
+            // Initialize selected contract no if exists
+            if (selectedContractNo) {
+                updateSelectedContractDisplay(selectedContractNo);
+            }
+
+            // Function to update selected tariff display
+            function updateSelectedTariffDisplay(tariffName) {
+                if (tariffName) {
+                    $('#selectedTariffDisplay').text(tariffName);
+                    $('#selectedTariffInfo').removeClass('d-none');
+                    $('#selectedTariffHidden').val(tariffName);
+                    selectedTariffName = tariffName;
+                    
+                    // Store in session storage for other uses
+                    sessionStorage.setItem('selectedTariffName', tariffName);
+                } else {
+                    $('#selectedTariffInfo').addClass('d-none');
+                    $('#selectedTariffHidden').val('');
+                    selectedTariffName = '';
+                    sessionStorage.removeItem('selectedTariffName');
+                }
+            }
+
+            // Function to update selected contract no display
+            function updateSelectedContractDisplay(contractNo) {
+                if (contractNo) {
+                    $('#selectedContractDisplay').text(contractNo);
+                    $('#selectedContractInfo').removeClass('d-none');
+                    selectedContractNo = contractNo;
+                    
+                    // Store in session storage for other uses
+                    sessionStorage.setItem('selectedContractNo', contractNo);
+                } else {
+                    $('#selectedContractInfo').addClass('d-none');
+                    selectedContractNo = '';
+                    sessionStorage.removeItem('selectedContractNo');
+                }
+            }
+
+            // Tariff selection change event
+            $('#tariffSelect').change(function() {
+                const selectedValue = $(this).val();
+                if (selectedValue) {
+                    updateSelectedTariffDisplay(selectedValue);
+                    
+                    // You can trigger other actions here
+                    console.log('Tariff seçildi:', selectedValue);
+                    
+                    // Example: Show notification
+                    showNotification('Seçili tarife: ' + selectedValue, 'success');
+                }
+            });
+
+            // Clear selection button
+            $('#clearTariffBtn').click(function() {
+                $('#tariffSelect').val('');
+                updateSelectedTariffDisplay('');
+                showNotification('Tarife seçimi temizlendi', 'info');
+            });
+
+            // Contract No selection change event
+            $('#contractNoSelect').change(function() {
+                const selectedValue = $(this).val();
+                if (selectedValue) {
+                    updateSelectedContractDisplay(selectedValue);
+                    
+                    console.log('Contract No seçildi:', selectedValue);
+                    showNotification('Seçili sözleşme no: ' + selectedValue, 'success');
+                }
+            });
+
+            // Clear contract selection button
+            $('#clearContractBtn').click(function() {
+                $('#contractNoSelect').val('');
+                updateSelectedContractDisplay('');
+                showNotification('Sözleşme no seçimi temizlendi', 'info');
+            });
+
+            // Function to show notification (optional)
+            function showNotification(message, type) {
+                // Create a temporary notification
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+                const $notification = $(`
+                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+                         style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                        <i class="bi bi-info-circle"></i> ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+                
+                $('body').append($notification);
+                
+                // Auto-dismiss after 3 seconds
+                setTimeout(function() {
+                    $notification.alert('close');
+                }, 3000);
+            }
+
+            // Function to get selected tariff (can be called from other functions)
+            window.getSelectedTariff = function() {
+                return selectedTariffName || sessionStorage.getItem('selectedTariffName') || '';
+            };
+
+            // Load Tariffs button click
+            $('#loadTariffsBtn').click(function() {
+                console.log('Yükle butonuna tıklandı');
+                
+                if (tariffsLoaded) {
+                    console.log('Tariffler zaten yüklü');
+                    return; // Already loaded
+                }
+
+                const $btn = $(this);
+                const $select = $('#tariffSelect');
+                
+                // Disable button and show loading
+                $btn.prop('disabled', true);
+                $btn.html('<span class="spinner-border spinner-border-sm"></span> Yükleniyor...');
+
+                const apiUrl = '@Url.Action("GetTariffNames", "Contract")';
+                console.log('API URL:', apiUrl);
+
+                // Call API to get tariff names
+                $.ajax({
+                    url: apiUrl,
+                    type: 'GET',
+                    success: function(response) {
+                        console.log('API Response:', response);
+                        if (response.success && response.data) {
+                            // Clear existing options except the first one
+                            $select.find('option:not(:first)').remove();
+                            
+                            console.log('Tariff sayısı:', response.data.length);
+                            
+                            // Add tariff names to select
+                            response.data.forEach(function(tariffName) {
+                                $select.append(new Option(tariffName, tariffName));
+                            });
+                            
+                            tariffsLoaded = true;
+                            
+                            // Restore previously selected value if exists
+                            @if (!string.IsNullOrEmpty(Model.SelectedTariffName))
+                            {
+                                <text>
+                                $select.val('@Model.SelectedTariffName');
+                                </text>
+                            }
+                            
+                            // Show success message
+                            $select.focus();
+                            showNotification(response.data.length + ' tarife yüklendi', 'success');
+                        } else {
+                            console.error('API başarısız:', response);
+                            alert('Tarife listesi yüklenirken hata oluştu: ' + (response.message || 'Bilinmeyen hata'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Hatası:', xhr, status, error);
+                        console.error('Response Text:', xhr.responseText);
+                        alert('Tarife listesi yüklenirken hata oluştu: ' + error + '\n\nDetay: ' + xhr.responseText);
+                    },
+                    complete: function() {
+                        console.log('AJAX tamamlandı');
+                        // Re-enable button and restore text
+                        $btn.prop('disabled', false);
+                        $btn.html('<i class="bi bi-arrow-clockwise"></i> Yükle');
+                    }
+                });
+            });
+
+            // Auto-load tariffs if there's a selected tariff (from previous search)
+            @if (!string.IsNullOrEmpty(Model.SelectedTariffName))
+            {
+                <text>
+                $('#loadTariffsBtn').click();
+                </text>
+            }
+
+            // Form validation
+            $('#searchForm').submit(function(e) {
+                const tariffName = $('#tariffSelect').val();
+                const contractNo = $('#contractNoSelect').val();
+                
+                // Update hidden field with current selection
+                if (tariffName) {
+                    $('#selectedTariffHidden').val(tariffName);
+                }
+                
+                if (!tariffName && !contractNo) {
+                    e.preventDefault();
+                    alert('Lütfen en az bir arama kriteri girin.');
+                    return false;
+                }
+            });
+            
+            // Expose selected tariff getter for other scripts
+            window.contractOperations = {
+                getSelectedTariff: function() {
+                    return selectedTariffName;
+                },
+                setSelectedTariff: function(tariffName) {
+                    $('#tariffSelect').val(tariffName);
+                    updateSelectedTariffDisplay(tariffName);
+                },
+                clearSelectedTariff: function() {
+                    $('#tariffSelect').val('');
+                    updateSelectedTariffDisplay('');
+                },
+                getSelectedContractNo: function() {
+                    return selectedContractNo;
+                },
+                setSelectedContractNo: function(contractNo) {
+                    $('#contractNoSelect').val(contractNo);
+                    updateSelectedContractDisplay(contractNo);
+                },
+                clearSelectedContractNo: function() {
+                    $('#contractNoSelect').val('');
+                    updateSelectedContractDisplay('');
+                }
+            };
+
+            // Load Contract Numbers button click
+            $('#loadContractNumbersBtn').click(function() {
+                console.log('Contract Numbers Yükle butonuna tıklandı');
+                
+                if (contractNumbersLoaded) {
+                    console.log('Contract Numbers zaten yüklü');
+                    return;
+                }
+
+                const $btn = $(this);
+                const $select = $('#contractNoSelect');
+                
+                $btn.prop('disabled', true);
+                $btn.html('<span class="spinner-border spinner-border-sm"></span> Yükleniyor...');
+
+                const apiUrl = '@Url.Action("GetContractNumbers", "Contract")';
+                console.log('Contract Numbers API URL:', apiUrl);
+
+                $.ajax({
+                    url: apiUrl,
+                    type: 'GET',
+                    success: function(response) {
+                        console.log('Contract Numbers API Response:', response);
+                        if (response.success && response.data) {
+                            $select.find('option:not(:first)').remove();
+                            
+                            console.log('Contract Number sayısı:', response.data.length);
+                            
+                            response.data.forEach(function(contractNo) {
+                                $select.append(new Option(contractNo, contractNo));
+                            });
+                            
+                            contractNumbersLoaded = true;
+                            
+                            @if (!string.IsNullOrEmpty(Model.SearchContractNo))
+                            {
+                                <text>
+                                $select.val('@Model.SearchContractNo');
+                                </text>
+                            }
+                            
+                            $select.focus();
+                            showNotification(response.data.length + ' sözleşme numarası yüklendi', 'success');
+                        } else {
+                            console.error('Contract Numbers API başarısız:', response);
+                            alert('Sözleşme numaraları yüklenirken hata oluştu: ' + (response.message || 'Bilinmeyen hata'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Contract Numbers AJAX Hatası:', xhr, status, error);
+                        console.error('Response Text:', xhr.responseText);
+                        alert('Sözleşme numaraları yüklenirken hata oluştu: ' + error);
+                    },
+                    complete: function() {
+                        console.log('Contract Numbers AJAX tamamlandı');
+                        $btn.prop('disabled', false);
+                        $btn.html('<i class="bi bi-arrow-clockwise"></i> Yükle');
+                    }
+                });
+            });
+
+            // Auto-load contract numbers if there's a selected one (from previous search)
+            @if (!string.IsNullOrEmpty(Model.SearchContractNo))
+            {
+                <text>
+                $('#loadContractNumbersBtn').click();
+                </text>
+            }
+
+            // Example: Button to show contracts by selected tariff
+            $('#showTariffContractsBtn').click(function() {
+                const tariff = window.getSelectedTariff();
+                
+                if (!tariff) {
+                    alert('Lütfen önce bir tarife seçin!');
+                    return;
+                }
+
+                const $btn = $(this);
+                $btn.prop('disabled', true);
+                $btn.html('<span class="spinner-border spinner-border-sm"></span> Yükleniyor...');
+
+                // Call the example API that uses selected tariff
+                $.ajax({
+                    url: '@Url.Action("GetContractsByTariff")',
+                    type: 'GET',
+                    data: { tariffName: tariff },
+                    success: function(response) {
+                        if (response.success) {
+                            // Display results (you can customize this)
+                            let message = `"${response.tariffName}" tarifesine ait ${response.data.length} sözleşme bulundu.`;
+                            
+                            if (response.data.length > 0) {
+                                message += '\n\nİlk 5 sözleşme:\n';
+                                response.data.slice(0, 5).forEach(function(contract) {
+                                    message += `\n- ${contract.contractNo} (${contract.customerName})`;
+                                });
+                            }
+                            
+                            alert(message);
+                        } else {
+                            alert('Hata: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Sözleşmeler yüklenirken hata oluştu: ' + error);
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $btn.html('<i class="bi bi-list-task"></i> Seçili Tarife İle İlgili Sözleşmeleri Göster');
+                    }
+                });
+            });
+
+            // Delete Policy functionality
+            $(document).on('click', '.delete-policy-btn', function() {
+                console.log('Delete button clicked'); // Debug
+                const policyId = $(this).data('policy-id');
+                const policyNo = $(this).data('policy-no');
+                
+                console.log('PolicyId:', policyId, 'PolicyNo:', policyNo); // Debug
+                
+                // Show confirmation dialog
+                if (confirm('Poliçe No: ' + policyNo + '\n\nBu poliçeyi silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!')) {
+                    const $btn = $(this);
+                    $btn.prop('disabled', true);
+                    $btn.html('<span class="spinner-border spinner-border-sm"></span>');
+
+                    $.ajax({
+                        url: '@Url.Action("DeletePolicy")',
+                        type: 'POST',
+                        data: { policyId: policyId },
+                        success: function(response) {
+                            if (response.success) {
+                                // Remove the row with animation
+                                $('#policy-row-' + policyId).fadeOut(500, function() {
+                                    $(this).remove();
+                                    
+                                    // Check if table is empty
+                                    if ($('tbody tr').length === 0) {
+                                        location.reload();
+                                    }
+                                });
+                                
+                                // Show success message
+                                alert(response.message);
+                            } else {
+                                alert('Hata: ' + response.message);
+                                $btn.prop('disabled', false);
+                                $btn.html('<i class="bi bi-trash"></i> Sil');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            alert('Silme işlemi sırasında hata oluştu: ' + error);
+                            $btn.prop('disabled', false);
+                            $btn.html('<i class="bi bi-trash"></i> Sil');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
