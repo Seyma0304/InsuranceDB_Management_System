@@ -1,10 +1,10 @@
 # Insurance DB Management System
 
-Modern ASP.NET Core 10.0 MVC web uygulaması - Sigorta yönetim sistemi
+Modern ASP.NET Core 8.0 MVC web uygulaması - Sigorta yönetim sistemi
 
 ## Gereksinimler
 
-- **.NET 10.0 SDK** veya üzeri
+- **.NET 8.0 SDK** veya üzeri
 - **Visual Studio Code** + **C# Dev Kit** extension
 - **SQL Server** (LocalDB, Express veya tam sürüm)
 
@@ -13,7 +13,7 @@ Modern ASP.NET Core 10.0 MVC web uygulaması - Sigorta yönetim sistemi
 ### 1. .NET SDK Kontrolü
 ```bash
 dotnet --version
-# 10.0 veya üzeri görmelisiniz
+# 8.0 veya üzeri görmelisiniz
 ```
 
 ### 2. Projeyi Klonlama
@@ -65,7 +65,7 @@ F5 tuşuna basarak debug modunda çalıştırabilirsiniz.
 
 ## Kullanılan Teknolojiler
 
-- .NET 10.0
+- .NET 8.0 (LTS)
 - ASP.NET Core MVC
 - Microsoft.Data.SqlClient
 - Bootstrap 5.2.3
