@@ -1,6 +1,6 @@
 # Insurance DB Management System
 
-Modern ASP.NET Core 8.0 MVC web uygulaması - Sigorta yönetim sistemi
+Modern ASP.NET Core 10.0 MVC web uygulaması - Sigorta yönetim sistemi
 
 ## Gereksinimler
 
@@ -30,9 +30,17 @@ dotnet restore
 ### 4. Veritabanı Bağlantısı
 `appsettings.json` dosyasında connection string'i kendi SQL Server ayarlarınıza göre düzenleyin:
 
+**Windows için:**
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Server=.;Database=InsuranceDB;Trusted_Connection=True;TrustServerCertificate=True;"
+  "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=InsuranceDB;Trusted_Connection=True;TrustServerCertificate=True;"
+}
+```
+
+**macOS/Linux için:**
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=localhost;Database=InsuranceDB;User Id=sa;Password=YourPassword;TrustServerCertificate=True;"
 }
 ```
 
@@ -41,7 +49,8 @@ dotnet restore
 dotnet run
 ```
 
-Tarayıcıda: `https://localhost:5001` veya `http://localhost:5000`
+Tarayıcıda: `https://localhost:5001` veya `http://localhost:5000` veya
+'http://localhost:5000/Contract/SearchContracts'
 
 ## VS Code ile Geliştirme
 
