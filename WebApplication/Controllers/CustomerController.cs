@@ -5,12 +5,16 @@ using WebApplication.Models.Data;
 
 namespace WebApplication.Controllers
 {
+    /// <summary>
+    /// Customer management controller for .NET Core
+    /// </summary>
     public class CustomerController : Controller
     {
         private readonly Db _db;
 
         public CustomerController(IConfiguration configuration)
         {
+            ArgumentNullException.ThrowIfNull(configuration);
             _db = new Db(configuration);
         }
 
@@ -20,47 +24,69 @@ namespace WebApplication.Controllers
             return View();
         }
 
+        // GET: Customer/Create
         public IActionResult Create()
         {
             return View();
         }
 
+        // POST: Customer/Create
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Create(CustomerCreateModel model)
         {
-            using (SqlConnection con = _db.GetConnection())
+            if (!ModelState.IsValid)
             {
-                SqlCommand cmd = new SqlCommand("sp_CreateCustomer", con);
-                cmd.CommandType = System.Data.CommandType.StoredProcedure;
-
-                // SP parameter mapping (8 params total)
-                cmd.Parameters.AddWithValue("@UserEmail", model.Email);
-                cmd.Parameters.AddWithValue("@UserPassword", model.UserPassword);
-                cmd.Parameters.AddWithValue("@UserType", "Customer");
-
-                cmd.Parameters.AddWithValue("@Phone", model.Phone);
-                cmd.Parameters.AddWithValue("@AddressLine", model.AddressLine);
-                cmd.Parameters.AddWithValue("@CustomerType", model.CustomerType);
-
-                // Person ise FullName = FirstName + LastName
-                if (model.CustomerType == "Person")
-                {
-                    string fullName = model.FirstName + " " + model.LastName;
-
-                    cmd.Parameters.AddWithValue("@FullNameOrCompany", fullName);
-                    cmd.Parameters.AddWithValue("@IdOrTaxNo", model.NationalIdNo);
-                }
-                else // Company
-                {
-                    cmd.Parameters.AddWithValue("@FullNameOrCompany", model.CompanyName);
-                    cmd.Parameters.AddWithValue("@IdOrTaxNo", model.CompanyTaxNo);
-                }
-
-                con.Open();
-                cmd.ExecuteNonQuery();
+                return View(model);
             }
 
-            return RedirectToAction("Index");
+            try
+            {
+                using (SqlConnection con = _db.GetConnection())
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_CreateCustomer", con))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                        // SP parameter mapping (8 params total)
+                        cmd.Parameters.AddWithValue("@UserEmail", model.Email ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@UserPassword", model.UserPassword ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@UserType", "Customer");
+                        cmd.Parameters.AddWithValue("@Phone", model.Phone ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@AddressLine", model.AddressLine ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@CustomerType", model.CustomerType ?? string.Empty);
+
+                        // Person ise FullName = FirstName + LastName
+                        if (model.CustomerType == "Person")
+                        {
+                            string fullName = $"{model.FirstName} {model.LastName}".Trim();
+                            cmd.Parameters.AddWithValue("@FullNameOrCompany", fullName);
+                            cmd.Parameters.AddWithValue("@IdOrTaxNo", model.NationalIdNo ?? string.Empty);
+                        }
+                        else // Company
+                        {
+                            cmd.Parameters.AddWithValue("@FullNameOrCompany", model.CompanyName ?? string.Empty);
+                            cmd.Parameters.AddWithValue("@IdOrTaxNo", model.CompanyTaxNo ?? string.Empty);
+                        }
+
+                        con.Open();
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                TempData["SuccessMessage"] = "Müşteri başarıyla oluşturuldu!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (SqlException ex)
+            {
+                ModelState.AddModelError(string.Empty, $"Veritabanı hatası: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"Hata: {ex.Message}");
+            }
+
+            return View(model);
         }
     }
 }
